@@ -98,6 +98,7 @@ body.drag-over::after{content:'松开导入导图';position:fixed;inset:0;backgr
 .welcome .card .big-btn.sec{background:var(--surface);color:var(--text);border:1px solid var(--border)}
 .welcome .card .hotkeys{font-size:10px;color:var(--text2);margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
 .welcome .card .hotkeys span{background:rgba(255,255,255,.04);padding:2px 8px;border-radius:4px}
+.welcome .card input::placeholder{color:#555}
 
 /* ---- SCROLLBAR ---- */
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}
@@ -119,8 +120,12 @@ body.drag-over::after{content:'松开导入导图';position:fixed;inset:0;backgr
   <button onclick="resetView()">🏠</button>
   <span class="sep"></span>
   <button onclick="toggleAI()" style="background:rgba(88,166,255,.1);border-color:#58a6ff33">🤖 AI</button>
-  <button class="accent2" onclick="aiGenerateSite()">🚀 生成网站</button>
+  <button class="accent2" onclick="aiGenTree()">🌳 AI 生成树</button>
+  <button class="accent" onclick="aiGenerateSite()">🚀 生成网站</button>
   <button onclick="toggleProps()" style="color:var(--text2)">📋 属性</button>
+  <span class="sep"></span>
+  <button onclick="exportCursor()" style="color:var(--purple)" title="导出 .cursorrules 给 Cursor IDE">📐 Cursor</button>
+  <button onclick="exportClaude()" style="color:var(--orange)" title="复制 prompt 给 Claude Code">🧠 Claude</button>
   <div class="spacer"></div>
   <span class="file-name" id="fileName">未保存的导图</span>
   <button onclick="exportJSON()">📥</button>
@@ -136,12 +141,16 @@ body.drag-over::after{content:'松开导入导图';position:fixed;inset:0;backgr
   <div class="welcome" id="welcome">
     <div class="card">
       <h1>🌳 契约树</h1>
-      <p>用思维导图定义网站结构<br>AI 自动优化并生成完整代码</p>
-      <button class="big-btn" onclick="initDemo();document.getElementById('welcome').style.display='none'">🚀 加载示例导图</button>
-      <a href="javascript:initBlank();document.getElementById('welcome').style.display='none'" class="big-btn sec">📄 空白画布</a>
+      <p>输入你的项目方向，AI 自动生成完整功能树<br>像 XMind 一样微调，一键导出给 Cursor 或 Claude Code</p>
+      <input type="text" id="topicInput" placeholder="例如：在线教育平台、电商小程序、AI 写作工具..." style="width:100%;max-width:420px;padding:12px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;text-align:center;font-family:inherit">
+      <div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="big-btn" onclick="aiGenTree()">🌳 AI 生成功能树</button>
+        <button class="big-btn sec" onclick="initBlank();document.getElementById('welcome').style.display='none'">📄 空白画布</button>
+        <button class="big-btn sec" onclick="initDemo();document.getElementById('welcome').style.display='none'">📦 看示例</button>
+      </div>
       <div class="hotkeys">
         <span>Tab 加子节点</span><span>Enter 加兄弟</span><span>Delete 删除</span>
-        <span>Space+拖拽平移</span><span>滚轮缩放</span><span>双击编辑</span>
+        <span>滚轮缩放</span><span>Space+拖拽平移</span><span>双击编辑</span>
       </div>
     </div>
   </div>
@@ -186,6 +195,10 @@ body.drag-over::after{content:'松开导入导图';position:fixed;inset:0;backgr
       <div class="btn-c" style="margin-top:4px">
         <button onclick="previewCode()" style="color:var(--text2)">👁️ 预览</button>
         <button onclick="downloadCode()" style="color:var(--green)">💾 下载 HTML</button>
+      </div>
+      <div class="btn-c" style="margin-top:4px">
+        <button onclick="exportCursor()" style="color:var(--purple)">📐 导出 .cursorrules</button>
+        <button onclick="exportClaude()" style="color:var(--orange)">🧠 复制 Claude Prompt</button>
       </div>
     </div>
   </div>
@@ -540,20 +553,138 @@ function buildTree(){
 function flatList(){const l=[];function w(id){const n=S.nodes[id];if(!n)return;l.push(n);n.children.forEach(w)}if(S.rootId)w(S.rootId);return l}
 
 async function aiOptimize(){
-  toggleAI();toggleAI(); // ensure open
-  alog('🔍 正在分析导图结构...','ai');
-  const t=buildTree(),json=JSON.stringify(t,null,2);
+// ======================== AI GEN TREE (from topic) ========================
+async function aiGenTree(){
+  const input=document.getElementById('topicInput');
+  const topic=(input?.value?.trim())||(S.nodes[S.rootId]?.label)||'';
+  if(!topic||topic==='我的网站'){toast('⚠️ 请先在输入框填写项目方向');document.getElementById('topicInput')?.focus();return}
+  toggleAI();toggleAI();
+  alog(`🌳 正在根据「${topic}」生成完整功能树...`,'ai');
+  document.getElementById('welcome').style.display='none';
+
   const key=document.getElementById('apiKey').value||S.apiKey;
-  if(!key){alog('⚠️ 未配置 Key，使用本地分析','err');simOpti(t);return}
+  if(!key){alog('⚠️ 未配置 API Key，使用内置模板','err');genDemoTree(topic);return}
+
   try{
+    const prompt=`你是一个资深产品架构师。用户要做「${topic}」。请生成一个完整的网站/应用功能结构树（JSON格式）。
+
+要求：
+1. 根节点是项目名称
+2. 下面分3-5个主要页面（首页、核心功能页、用户中心、管理后台…）
+3. 每个页面下细分3-6个功能模块/组件
+4. 最后可以有一层API接口定义
+5. 每个节点需要：label（名称）、desc（一句话功能描述）、type（page/module/component/api）
+6. 既要完整覆盖核心功能，又要有商业变现路径（付费/订阅/广告位）
+
+返回纯JSON，格式如：
+{"label":"项目名","desc":"一句话描述","type":"page","children":[
+  {"label":"首页","desc":"...","type":"page","children":[...]},
+  ...
+]}
+只返回JSON，不要解释。`;
+
     const r=await fetch('https://api.deepseek.com/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:`分析这个网站结构导图，指出遗漏/冗余，返回优化后的 JSON 结构。\n${json}`}],temperature:.3,max_tokens:2000})
+      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],temperature:.5,max_tokens:4000})
     });
     if(!r.ok)throw new Error('API '+r.status);
-    const d=await r.json();alog('✅ AI 分析完成','ai');
-    alog(d.choices[0].message.content.slice(0,300),'user');toast('✅ AI 优化完成');
-  }catch(e){alog('❌ '+e.message,'err');simOpti(t)}
+    const d=await r.json();
+    let raw=d.choices[0].message.content.trim();
+    const mm=raw.match(/\{[\s\S]*\}/);if(mm)raw=mm[0];
+    const tree=JSON.parse(raw);
+    rebuildFromJSON(tree);
+    alog(`✅ 功能树已生成 (${Object.keys(S.nodes).length} 个节点)`,'ai');
+    alog('现在你可以：拖拽微调节点 → 点「生成网站」→ 导出给 Cursor/Claude 写代码','ai');
+    toast(`✅ 已生成 ${Object.keys(S.nodes).length} 个功能节点`);
+  }catch(e){alog('❌ '+e.message+'，使用模板替代','err');genDemoTree(topic)}
+}
+
+function genDemoTree(topic){
+  const r=mkNode(topic,'AI生成的功能架构',null,'page');
+  const home=mkNode('首页','产品主页，第一印象+转化入口',r,'page');
+  mkNode('Hero区域','核心价值主张+CTA按钮+背景动效',home,'component');
+  mkNode('功能概览','3-6个核心功能卡片+图标+简短说明',home,'module');
+  mkNode('用户口碑','评价轮播/数据展示/客户Logo墙',home,'module');
+  mkNode('定价展示','方案对比表+FAQ+免费试用入口',home,'module');
+  const feat=mkNode('核心功能','产品主要使用场景的完整页面',r,'page');
+  mkNode('功能A','用户最核心的操作流程',feat,'module');
+  mkNode('功能B','第二重要的用户操作流程',feat,'module');
+  mkNode('功能C','辅助功能/增值服务',feat,'module');
+  const usr=mkNode('用户中心','个人设置/历史记录/订阅管理',r,'page');
+  mkNode('个人资料','头像/昵称/绑定/偏好设置',usr,'component');
+  mkNode('使用记录','历史操作/收藏/草稿',usr,'module');
+  mkNode('订阅管理','套餐查看/升级/续费/发票',usr,'module');
+  const adm=mkNode('管理后台','内容管理+用户管理+数据',r,'page');
+  mkNode('内容管理','CRUD+审核+上下架',adm,'module');
+  mkNode('用户管理','列表+搜索+封禁+角色',adm,'module');
+  mkNode('数据看板','核心指标+趋势图+导出',adm,'module');
+  const api=mkNode('后端API','RESTful接口定义',r,'api');
+  mkNode('认证','POST /auth {email,password}',api,'api');
+  mkNode('CRUD','GET/POST/PUT/DELETE 资源',api,'api');
+  mkNode('支付','POST /pay {orderId,method}',api,'api');
+  S.rootId=r;selNode(r);render();
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('fileName').textContent=topic+'.ct';
+  alog(`✅ 已生成 ${Object.keys(S.nodes).length} 个节点的基础功能树`,'ai');
+}
+
+function rebuildFromJSON(tree){
+  const oldNodes=S.nodes;S.nodes={};S.nextId=1;
+  function build(pid,node){const id=mkNode(node.label,node.desc||'',pid,node.type||'page');if(node.children)node.children.forEach(c=>build(id,c));return id}
+  S.rootId=build(null,tree);selNode(S.rootId);
+  S.nodes[S.rootId].level=0;render();
+  document.getElementById('fileName').textContent=(S.nodes[S.rootId]?.label||'未命名')+'.ct';
+}
+
+// ======================== EXPORT TO CURSOR/CLAUDE ========================
+function buildSpecText(){
+  const t=buildTree(),flat=flatList();
+  let txt=`# ${t.label} — 完整功能规格书\n\n`;
+  txt+=`> 由契约树思维导图生成 · ${new Date().toLocaleDateString('zh-CN')}\n\n`;
+  txt+=`## 项目概述\n${t.desc||t.label}\n\n`;
+  txt+=`## 功能架构\n\n`;
+  function walk(node,depth){
+    const prefix='  '.repeat(depth)+'- ';
+    txt+=`${prefix}**${node.label}**`;
+    if(node.desc)txt+=` — ${node.desc}`;
+    if(node.tags)txt+=` \`${node.tags}\``;
+    txt+='\n';
+    if(node.children)node.children.forEach(c=>walk(c,depth+1));
+  }
+  walk(t,0);
+  txt+=`\n## 页面清单\n`;
+  flat.filter(n=>n.type==='page').forEach(p=>txt+=`- ${p.label}: ${p.desc||''}\n`);
+  txt+=`\n## API接口清单\n`;
+  flat.filter(n=>n.type==='api').forEach(a=>txt+=`- ${a.label}: ${a.desc||''}\n`);
+  txt+=`\n## 技术标签\n`;
+  const tags=[...new Set(flat.map(n=>n.tags).filter(Boolean).flatMap(t=>t.split(/[,;，；]/).map(s=>s.trim())))];
+  tags.forEach(t=>txt+=`- ${t}\n`);
+  return txt;
+}
+
+function exportCursor(){
+  const spec=buildSpecText();
+  const ct=`${spec}\n\n## 开发指令\n请严格按照以上功能架构实现项目。每个节点 = 一个必须实现的功能。保持代码结构清晰、模块化、可维护。使用现代前端技术栈。`;
+  const b=new Blob([ct],{type:'text/plain'});
+  const a=document.createElement('a');
+  const name=(S.nodes[S.rootId]?.label||'project').replace(/[^a-zA-Z\u4e00-\u9fa5]/g,'-');
+  a.href=URL.createObjectURL(b);a.download='.cursorrules';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  toast('📐 .cursorrules 已下载 → 放到项目根目录，Cursor 自动读取');
+}
+
+async function exportClaude(){
+  const spec=buildSpecText();
+  const prompt=`请严格按照以下功能规格书实现完整项目：\n\n${spec}\n\n要求：\n1. 每个功能节点都必须实现\n2. 单文件 HTML 或完整的项目结构\n3. 现代设计、响应式、可运行\n4. 代码清晰、注释完整`;
+  try{
+    await navigator.clipboard.writeText(prompt);
+    toast('🧠 Prompt 已复制 → 粘贴到 Claude Code 对话中即可');
+  }catch(e){
+    // Fallback: show in textarea
+    const ta=document.createElement('textarea');ta.value=prompt;
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    toast('🧠 Prompt 已复制到剪贴板');
+  }
 }
 function simOpti(t){
   const l=flatList();
