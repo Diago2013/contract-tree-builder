@@ -6,202 +6,199 @@
 <title>🌳 契约树 — 思维导图式网站构建器</title>
 <style>
 :root{
---bg:#0a0e14; --surface:#12171e; --border:#1e293b; --text:#c4ccd4; --text2:#7f8c9b;
---accent:#00d4aa; --accent2:#00aaff; --danger:#ff5577; --warn:#ffaa00;
---node-bg:#141b22; --node-hover:#1a2430; --node-selected:#1a2a38;
---font:'Inter',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
---shadow:0 4px 24px rgba(0,0,0,.4);
+--bg:#0d1117; --surface:#161b22; --border:#30363d; --text:#c9d1d9; --text2:#8b949e;
+--accent:#58a6ff; --green:#3fb950; --orange:#d2991d; --red:#f85149; --purple:#bc8cff;
+font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+--shadow:0 8px 24px rgba(0,0,0,.5);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;height:100vh;display:flex;flex-direction:column;user-select:none}
+body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+body.drag-over::after{content:'松开导入导图';position:fixed;inset:0;background:rgba(88,166,255,.15);z-index:9999;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--accent);border:4px dashed var(--accent);border-radius:16px;margin:20px;pointer-events:none}
 
-/* Top Bar */
-.topbar{display:flex;align-items:center;gap:12px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);z-index:100}
-.topbar .logo{font-size:18px;font-weight:700;color:var(--accent);white-space:nowrap}
-.topbar .sep{width:1px;height:24px;background:var(--border);margin:0 4px}
-.topbar button{padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-size:12px;font-family:var(--font);white-space:nowrap;transition:all .15s}
-.topbar button:hover{background:var(--node-hover);border-color:var(--accent);color:#fff}
-.topbar button.accent{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
-.topbar button.accent:hover{background:#00e6b8}
-.topbar button.accent2{background:var(--accent2);color:#000;border-color:var(--accent2);font-weight:600}
-.topbar button.accent2:hover{background:#1ab8ff}
-.topbar .spacer{flex:1}
-.topbar .status{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px}
-.topbar .status .dot{width:8px;height:8px;border-radius:50%;background:#555}
-.topbar .status .dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-.topbar .count{font-size:11px;color:var(--text2);background:var(--bg);padding:2px 8px;border-radius:10px;border:1px solid var(--border)}
+/* ---- TOP BAR ---- */
+.tb{display:flex;align-items:center;gap:4px;padding:4px 12px;background:var(--surface);border-bottom:1px solid var(--border);z-index:100;height:40px;min-height:40px}
+.tb .logo{font-size:15px;font-weight:700;color:var(--green);margin-right:8px;white-space:nowrap;cursor:pointer}
+.tb .sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.tb button{padding:4px 10px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--text);cursor:pointer;font-size:12px;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:4px;height:28px}
+.tb button:hover{background:rgba(255,255,255,.06);border-color:var(--border)}
+.tb button.accent{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+.tb button.accent:hover{filter:brightness(1.15)}
+.tb button.accent2{background:var(--green);color:#000;border-color:var(--green);font-weight:600}
+.tb button .kbd{font-size:10px;color:var(--text2);margin-left:2px}
+.tb .spacer{flex:1}
+.tb .file-name{font-size:12px;color:var(--text2);background:rgba(255,255,255,.03);padding:2px 10px;border-radius:4px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px}
+.tb .dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
 
-/* Main Layout */
-.main{display:flex;flex:1;overflow:hidden}
-.canvas-wrap{flex:1;position:relative;overflow:hidden;background:radial-gradient(circle at center,#121a24 0%,#0a0e14 70%)}
-.panel{width:320px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .2s}
-.panel.collapsed{width:0;border-left:none}
-.panel-header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600}
-.panel-header .toggle{font-size:18px;cursor:pointer;color:var(--text2);width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px}
-.panel-header .toggle:hover{background:var(--node-hover);color:#fff}
-.panel-body{flex:1;overflow-y:auto;padding:12px}
-.panel-tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
-.panel-tab{padding:8px 16px;font-size:12px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
-.panel-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+/* ---- CANVAS ---- */
+.canvas-wrap{flex:1;position:relative;overflow:hidden;cursor:grab;background:radial-gradient(ellipse at center,#1a2332 0%,#0d1117 60%)}
+.canvas-wrap:active{cursor:grabbing}
+.canvas-wrap.panning{cursor:grabbing}
+.canvas-wrap svg{display:block}
+.node-group{cursor:pointer;transition:transform .15s}
+.node-group:hover{filter:brightness(1.1)}
+.node-rect{transition:all .2s}
+.node-label{pointer-events:none;font-weight:500}
+.node-desc{pointer-events:none}
+.edge-path{fill:none;stroke-width:1.5;stroke-linecap:round;transition:stroke .2s}
+.add-btn{opacity:0;transition:opacity .15s;cursor:pointer}
+.node-group:hover .add-btn{opacity:1}
+.add-btn:hover circle{fill:var(--accent)}
 
-/* SVG Canvas */
-.canvas-wrap svg{width:100%;height:100%;cursor:grab}
-.canvas-wrap svg:active{cursor:grabbing}
+/* ---- MINIMAP ---- */
+.minimap{position:absolute;right:12px;bottom:12px;width:160px;height:110px;background:var(--surface);border:1px solid var(--border);border-radius:8px;z-index:50;overflow:hidden;box-shadow:var(--shadow)}
+.minimap svg{width:100%;height:100%}
 
-/* Node Styles */
-.node-group{cursor:pointer}
-.node-rect{fill:var(--node-bg);stroke:var(--border);rx:8;ry:8;transition:all .2s}
-.node-group:hover .node-rect{stroke:var(--accent);fill:var(--node-hover)}
-.node-group.selected .node-rect{stroke:var(--accent);stroke-width:2;fill:var(--node-selected);filter:drop-shadow(0 0 6px rgba(0,212,170,.3))}
-.node-label{fill:var(--text);font-size:12px;font-weight:500}
-.node-group.root .node-rect{fill:var(--accent);stroke:var(--accent)}
-.node-group.root .node-label{fill:#000;font-size:14px;font-weight:700}
-.node-desc{fill:var(--text2);font-size:10px}
-.edge-line{stroke:var(--border);stroke-width:1.5;fill:none}
-.edge-line.highlight{stroke:var(--accent);stroke-width:2}
-.plus-btn{fill:var(--border);cursor:pointer;transition:all .15s}
-.plus-btn:hover{fill:var(--accent)}
-.plus-btn-text{fill:var(--text2);font-size:18px;pointer-events:none}
+/* ---- FLOATING PANEL ---- */
+.fpanel{position:absolute;right:16px;top:56px;width:280px;background:var(--surface);border:1px solid var(--border);border-radius:10px;z-index:60;box-shadow:var(--shadow);display:none;overflow:hidden}
+.fpanel.open{display:block}
+.fpanel .fhead{display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;gap:8px;cursor:move}
+.fpanel .fhead .close{font-size:16px;cursor:pointer;color:var(--text2);margin-left:auto;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px}
+.fpanel .fhead .close:hover{background:rgba(255,255,255,.08);color:#fff}
+.fpanel .fbody{padding:10px;max-height:400px;overflow-y:auto}
+.fpanel label{display:block;font-size:10px;color:var(--text2);margin:8px 0 3px;text-transform:uppercase;letter-spacing:.5px}
+.fpanel input,.fpanel textarea,.fpanel select{width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;font-family:inherit;resize:vertical}
+.fpanel input:focus,.fpanel textarea:focus{outline:none;border-color:var(--accent)}
+.fpanel textarea{min-height:50px}
+.fpanel .btn-c{display:flex;gap:6px;margin-top:10px}
+.fpanel .btn-c button{flex:1;padding:6px;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:11px}
+.fpanel .btn-c .del{color:var(--red);border-color:var(--red)}
+.fpanel .btn-c .del:hover{background:var(--red);color:#fff}
+.fpanel .btn-c .add{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
 
-/* Panel Inputs */
-.panel label{display:block;font-size:11px;color:var(--text2);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.5px}
-.panel input,.panel textarea,.panel select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:12px;font-family:var(--font);resize:vertical}
-.panel textarea{min-height:60px}
-.panel input:focus,.panel textarea:focus{outline:none;border-color:var(--accent)}
-.panel .btn-row{display:flex;gap:8px;margin-top:12px}
-.panel .btn-row button{flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;font-family:var(--font);background:var(--bg);color:var(--text)}
-.panel .btn-row button.danger{color:var(--danger);border-color:var(--danger)}
-.panel .btn-row button.danger:hover{background:var(--danger);color:#fff}
-.panel .btn-row button.primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
-.panel .btn-row button.primary:hover{background:#00e6b8}
+/* ---- AI PANEL ---- */
+.aipanel{position:absolute;right:16px;top:56px;width:340px;background:var(--surface);border:1px solid var(--border);border-radius:10px;z-index:61;box-shadow:var(--shadow);display:none}
+.aipanel.open{display:block}
+.aipanel .aibody{padding:12px;max-height:500px;overflow-y:auto}
+.aipanel .log{font-size:11px;line-height:1.7;max-height:180px;overflow-y:auto;background:var(--bg);padding:8px;border-radius:6px;margin-bottom:10px;font-family:'SF Mono',Consolas,monospace}
+.aipanel .log .m{margin-bottom:4px}
+.aipanel .log .user{color:var(--accent)}
+.aipanel .log .ai{color:var(--green)}
+.aipanel .log .err{color:var(--red)}
+.aipanel .btn-c{margin-top:6px;display:flex;gap:6px}
+.aipanel .btn-c button{flex:1}
 
-/* AI Panel */
-.ai-log{font-size:11px;color:var(--text2);line-height:1.6;max-height:200px;overflow-y:auto;background:var(--bg);padding:10px;border-radius:6px;border:1px solid var(--border);margin-bottom:10px}
-.ai-log .ai-msg{margin-bottom:6px;padding:4px 0}
-.ai-log .ai-msg.user{color:var(--accent2)}
-.ai-log .ai-msg.ai{color:var(--accent)}
-.ai-log .ai-msg.error{color:var(--danger)}
-.preview-frame{width:100%;height:300px;border:1px solid var(--border);border-radius:6px;background:#fff}
+/* ---- CONTEXT MENU ---- */
+.ctx{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 0;z-index:999;display:none;box-shadow:var(--shadow);min-width:170px}
+.ctx .item{padding:7px 14px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.ctx .item:hover{background:rgba(88,166,255,.1);color:#fff}
+.ctx .item.del{color:var(--red)}
+.ctx .hr{height:1px;background:var(--border);margin:3px 0}
 
-/* Toast */
-.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);padding:10px 24px;background:var(--surface);border:1px solid var(--accent);border-radius:8px;color:#fff;font-size:12px;z-index:9999;opacity:0;pointer-events:none;transition:opacity .3s;box-shadow:var(--shadow)}
-.toast.show{opacity:1}
+/* ---- TOAST ---- */
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);padding:8px 20px;background:var(--surface);border:1px solid var(--accent);border-radius:8px;color:#fff;font-size:12px;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s;box-shadow:var(--shadow)}
+.toast.on{opacity:1}
 
-/* Context Menu */
-.ctx-menu{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 0;z-index:9998;display:none;box-shadow:var(--shadow);min-width:180px}
-.ctx-menu .ctx-item{padding:8px 16px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s}
-.ctx-menu .ctx-item:hover{background:var(--node-hover);color:#fff}
-.ctx-menu .ctx-item.danger{color:var(--danger)}
-.ctx-menu .divider{height:1px;background:var(--border);margin:4px 0}
+/* ---- WELCOME OVERLAY ---- */
+.welcome{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;pointer-events:none}
+.welcome .card{pointer-events:auto;text-align:center;padding:40px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+.welcome .card h1{font-size:2rem;color:var(--accent);margin-bottom:8px}
+.welcome .card p{color:var(--text2);margin-bottom:24px;line-height:1.6}
+.welcome .card .big-btn{display:inline-block;padding:10px 28px;background:var(--accent);color:#000;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin:4px}
+.welcome .card .big-btn.sec{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.welcome .card .hotkeys{font-size:10px;color:var(--text2);margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.welcome .card .hotkeys span{background:rgba(255,255,255,.04);padding:2px 8px;border-radius:4px}
 
-/* Resize Handle */
-.resize-handle{position:absolute;left:0;top:0;width:4px;height:100%;cursor:col-resize;z-index:10}
-.resize-handle:hover{background:var(--accent)}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+/* ---- SCROLLBAR ---- */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 </style>
 </head>
 <body>
 
-<!-- Top Bar -->
-<div class="topbar">
-  <span class="logo">🌳 契约树</span>
+<!-- TOP BAR -->
+<div class="tb">
+  <span class="logo" onclick="resetAll()">🌳 契约树</span>
   <span class="sep"></span>
-  <button onclick="addChildNode()" title="为选中节点添加子节点 (Tab)">➕ 子节点</button>
-  <button onclick="addSiblingNode()" title="为选中节点添加兄弟节点">📋 兄弟节点</button>
-  <button onclick="deleteNode()" title="删除选中节点 (Delete)">🗑️ 删除</button>
+  <button onclick="addChildNode()" title="添加子节点 (Tab)">➕ 子节点</button>
+  <button onclick="addSiblingNode()" title="添加兄弟节点 (Enter)">📋 兄弟</button>
+  <button onclick="deleteNode()" title="删除 (Delete)">🗑️</button>
   <span class="sep"></span>
-  <button onclick="zoomIn()">🔍+</button>
-  <button onclick="zoomOut()">🔍-</button>
+  <button onclick="zoomIn()">🔍<span class="kbd">+</span></button>
+  <button onclick="zoomOut()">🔍<span class="kbd">-</span></button>
   <button onclick="resetView()">🏠</button>
   <span class="sep"></span>
-  <button style="background:var(--accent);color:#000;border-color:var(--accent);font-weight:600" onclick="aiOptimize()">🤖 AI 优化结构</button>
-  <button class="accent2" onclick="aiGenerateSite()">🚀 AI 生成网站</button>
+  <button onclick="toggleAI()" style="background:rgba(88,166,255,.1);border-color:#58a6ff33">🤖 AI</button>
+  <button class="accent2" onclick="aiGenerateSite()">🚀 生成网站</button>
+  <button onclick="toggleProps()" style="color:var(--text2)">📋 属性</button>
   <div class="spacer"></div>
-  <span class="count" id="nodeCount">1 节点</span>
-  <button onclick="exportJSON()">📥 导出</button>
-  <button onclick="document.getElementById('importFile').click()">📤 导入</button>
-  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
-  <span class="status"><span class="dot on" id="statusDot"></span><span id="statusText">就绪</span></span>
+  <span class="file-name" id="fileName">未保存的导图</span>
+  <button onclick="exportJSON()">📥</button>
+  <button onclick="document.getElementById('imp').click()">📤</button>
+  <input type="file" id="imp" accept=".json" style="display:none" onchange="importJSON(event)">
+  <span class="dot on"></span>
+  <span style="font-size:11px;color:var(--text2)" id="nodeCountTxt">7 节点</span>
 </div>
 
-<!-- Main -->
-<div class="main">
-  <!-- Canvas -->
-  <div class="canvas-wrap" id="canvasWrap">
-    <svg id="svgCanvas"></svg>
-    <div class="ctx-menu" id="ctxMenu">
-      <div class="ctx-item" onclick="addChildNode()">➕ 添加子节点</div>
-      <div class="ctx-item" onclick="addSiblingNode()">📋 添加兄弟节点</div>
-      <div class="divider"></div>
-      <div class="ctx-item" onclick="editLabel()">✏️ 编辑名称</div>
-      <div class="divider"></div>
-      <div class="ctx-item danger" onclick="deleteNode()">🗑️ 删除节点</div>
+<!-- Canvas -->
+<div class="canvas-wrap" id="wrap">
+  <svg id="svg"></svg>
+  <div class="welcome" id="welcome">
+    <div class="card">
+      <h1>🌳 契约树</h1>
+      <p>用思维导图定义网站结构<br>AI 自动优化并生成完整代码</p>
+      <button class="big-btn" onclick="initDemo();document.getElementById('welcome').style.display='none'">🚀 加载示例导图</button>
+      <a href="javascript:initBlank();document.getElementById('welcome').style.display='none'" class="big-btn sec">📄 空白画布</a>
+      <div class="hotkeys">
+        <span>Tab 加子节点</span><span>Enter 加兄弟</span><span>Delete 删除</span>
+        <span>Space+拖拽平移</span><span>滚轮缩放</span><span>双击编辑</span>
+      </div>
     </div>
   </div>
 
-  <!-- Right Panel -->
-  <div class="panel" id="sidePanel">
-    <div class="panel-header">
-      <span>📋 属性面板</span>
-      <div style="flex:1"></div>
-      <span class="toggle" onclick="togglePanel()" title="折叠面板">◀</span>
-    </div>
-    <div class="panel-tabs">
-      <button class="panel-tab active" onclick="switchTab('prop')">📝 属性</button>
-      <button class="panel-tab" onclick="switchTab('ai')">🤖 AI</button>
-      <button class="panel-tab" onclick="switchTab('preview')">👁️ 预览</button>
-    </div>
+  <!-- Minimap -->
+  <div class="minimap" id="minimap"><svg id="minisvg"></svg></div>
 
-    <!-- Properties Tab -->
-    <div class="panel-body" id="tabProp">
-      <label>节点名称</label>
-      <input type="text" id="nodeName" placeholder="点击节点编辑..." oninput="updateSelectedNode()">
+  <!-- Property Panel -->
+  <div class="fpanel" id="fpanel">
+    <div class="fhead"><span>📋 节点属性</span><span class="close" onclick="toggleProps()">✕</span></div>
+    <div class="fbody">
+      <label>名称</label>
+      <input type="text" id="npName" oninput="syncNode()">
       <label>功能描述</label>
-      <textarea id="nodeDesc" placeholder="描述这个功能模块...&#10;例如：用户注册页面，包含手机号验证、密码强度检测" oninput="updateSelectedNode()"></textarea>
-      <label>页面类型</label>
-      <select id="nodeType" onchange="updateSelectedNode()">
-        <option value="page">📄 页面</option>
-        <option value="module">🧩 功能模块</option>
-        <option value="component">🎨 UI组件</option>
-        <option value="api">🔌 API接口</option>
-        <option value="data">🗄️ 数据模型</option>
+      <textarea id="npDesc" oninput="syncNode()" placeholder="描述这个功能模块..."></textarea>
+      <label>类型</label>
+      <select id="npType" onchange="syncNode()">
+        <option value="page">📄 页面</option><option value="module">🧩 功能模块</option>
+        <option value="component">🎨 UI组件</option><option value="api">🔌 API</option>
+        <option value="data">🗄️ 数据</option>
       </select>
       <label>技术标签</label>
-      <input type="text" id="nodeTags" placeholder="react,node.js,postgresql..." oninput="updateSelectedNode()">
-      <div class="btn-row">
-        <button class="danger" onclick="deleteNode()">🗑️ 删除节点</button>
-        <button class="primary" onclick="addChildNode()">➕ 添加子节点</button>
+      <input type="text" id="npTags" oninput="syncNode()" placeholder="react, node.js, mongodb...">
+      <div class="btn-c">
+        <button class="del" onclick="deleteNode()">🗑️ 删除</button>
+        <button class="add" onclick="addChildNode()">➕ 子节点</button>
       </div>
-    </div>
-
-    <!-- AI Tab -->
-    <div class="panel-body" id="tabAI" style="display:none">
-      <div class="ai-log" id="aiLog">
-        <div class="ai-msg ai">🤖 AI 助手就绪。点击顶部「AI 优化结构」或「AI 生成网站」开始。</div>
-      </div>
-      <label>DeepSeek API Key</label>
-      <input type="password" id="apiKey" placeholder="sk-... (不填使用模拟模式)">
-      <div class="btn-row" style="margin-top:8px">
-        <button onclick="aiOptimize()">🤖 优化结构</button>
-        <button class="primary" onclick="aiGenerateSite()">🚀 生成网站</button>
-      </div>
-    </div>
-
-    <!-- Preview Tab -->
-    <div class="panel-body" id="tabPreview" style="display:none">
-      <textarea id="generatedCode" style="min-height:120px;font-family:monospace;font-size:11px" placeholder="AI 生成的代码将显示在这里..." readonly></textarea>
-      <div class="btn-row">
-        <button onclick="previewCode()">👁️ 新窗口预览</button>
-        <button class="primary" onclick="downloadCode()">💾 下载 HTML</button>
-      </div>
-      <iframe class="preview-frame" id="previewFrame" sandbox="allow-scripts" style="margin-top:10px"></iframe>
     </div>
   </div>
+
+  <!-- AI Panel -->
+  <div class="aipanel" id="aipanel">
+    <div class="fhead"><span>🤖 AI 助手</span><span class="close" onclick="toggleAI()">✕</span></div>
+    <div class="aibody">
+      <div class="log" id="aiLog"><div class="m ai">🤖 就绪。配置 DeepSeek Key 后可使用 AI 优化 + 生成网站。</div></div>
+      <label style="font-size:10px;color:var(--text2)">DeepSeek API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-...">
+      <div class="btn-c">
+        <button onclick="aiOptimize()">🤖 优化结构</button>
+        <button class="add" onclick="aiGenerateSite()">🚀 生成网站</button>
+      </div>
+      <div class="btn-c" style="margin-top:4px">
+        <button onclick="previewCode()" style="color:var(--text2)">👁️ 预览</button>
+        <button onclick="downloadCode()" style="color:var(--green)">💾 下载 HTML</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ctx" id="ctx">
+  <div class="item" onclick="addChildNode()">➕ 添加子节点</div>
+  <div class="item" onclick="addSiblingNode()">📋 添加兄弟节点</div>
+  <div class="hr"></div>
+  <div class="item" onclick="editLabel()">✏️ 重命名</div>
+  <div class="item" onclick="duplicateBranch()">📑 复制分支</div>
+  <div class="hr"></div>
+  <div class="item del" onclick="deleteNode()">🗑️ 删除</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -209,571 +206,471 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow:hid
 <script>
 // ======================== STATE ========================
 const S={
-  nodes:{},
-  selectedId:null,
-  rootId:null,
-  nextId:1,
+  nodes:{}, rootId:null, selId:null, nextId:1,
   panX:0, panY:0, scale:1,
-  dragging:null, panning:false,
-  generatedHTML:'',
-  apiKey:localStorage.getItem('ct_apikey')||''
+  panning:false, panSX:0, panSY:0, sx:0, sy:0,
+  genHTML:'',
+  apiKey:localStorage.getItem('ct_key')||''
 };
 
-// ======================== NODE CLASS ========================
-function createNode(label,desc,parentId,type){
+// ======================== NODE COLORS ========================
+const PALETTE=['#58a6ff','#3fb950','#d2991d','#f85149','#bc8cff','#79c0ff','#56d364','#e3b341'];
+
+// ======================== NODE OPS ========================
+function mkNode(label,desc,pid,type){
   const id='n'+(S.nextId++);
-  S.nodes[id]={id,label,desc:desc||'',children:[],parentId,level:0,type:type||'page',tags:''};
-  if(parentId && S.nodes[parentId]){S.nodes[parentId].children.push(id);S.nodes[id].level=S.nodes[parentId].level+1}
+  S.nodes[id]={id,label,desc:desc||'',children:[],parentId:pid,level:0,type:type||'page',tags:'',collapsed:false};
+  if(pid&&S.nodes[pid]){S.nodes[pid].children.push(id);S.nodes[id].level=S.nodes[pid].level+1}
   return id;
 }
 
-// ======================== TREE LAYOUT ========================
+// ======================== LAYOUT ========================
+let nodePos={};
+const NW=180,NH=52,GX=50,GY=22;
+
 function computeLayout(){
-  if(!S.rootId||!S.nodes[S.rootId]) return {};
-  const pos={};
-  const NODE_W=180,NODE_H=50,GAP_X=60,GAP_Y=20;
-  function subtreeWidth(id){
-    const n=S.nodes[id];if(!n)return NODE_W;
-    if(n.children.length===0)return NODE_W;
-    let w=0;
-    for(const cid of n.children)w+=subtreeWidth(cid);
-    return Math.max(NODE_W,w+(n.children.length-1)*GAP_X);
+  nodePos={};if(!S.rootId||!S.nodes[S.rootId])return;
+  const r=S.nodes[S.rootId];
+  function sw(id){
+    const n=S.nodes[id];if(!n||n.collapsed)return NW;
+    if(!n.children.length)return NW;
+    let w=0;for(const c of n.children)w+=sw(c);return Math.max(NW,w+(n.children.length-1)*GX);
   }
   function place(id,x,cy){
     const n=S.nodes[id];if(!n)return;
-    pos[id]={x:x+NODE_W/2,y:cy};
-    if(n.children.length===0)return;
-    const kids=n.children.map(cid=>({id:cid,w:subtreeWidth(cid)})).filter(k=>k.w>0);
-    const totalW=kids.reduce((s,k)=>s+k.w,0)+(kids.length-1)*GAP_X;
-    let cx=x-(totalW-subtreeWidth(id))/2;
-    for(const k of kids){
-      place(k.id,cx,cy+NODE_H+GAP_Y);
-      cx+=k.w+GAP_X;
-    }
+    nodePos[id]={x:x+NW/2,y:cy};
+    if(!n.children.length||n.collapsed)return;
+    const ks=n.children.map(c=>({id:c,w:sw(c)})).filter(k=>k.w>0);
+    if(!ks.length)return;
+    const tw=ks.reduce((s,k)=>s+k.w,0)+(ks.length-1)*GX;
+    let cx=x-(tw-sw(id))/2;
+    for(const k of ks){place(k.id,cx,cy+NH+GY);cx+=k.w+GX;}
   }
   place(S.rootId,0,0);
-  // Center root
-  if(pos[S.rootId]){
-    const rx=pos[S.rootId].x;
-    for(const k in pos)pos[k].x-=rx;
-  }
-  return pos;
+  if(nodePos[S.rootId]){const rx=nodePos[S.rootId].x;for(const k in nodePos)nodePos[k].x-=rx;}
 }
 
 // ======================== RENDER ========================
-const svg=document.getElementById('svgCanvas');
-let nodePositions={};
+const svgEl=document.getElementById('svg');
 
 function render(){
-  svg.innerHTML='';
+  computeLayout();
+  svgEl.innerHTML='';
   const g=document.createElementNS('http://www.w3.org/2000/svg','g');
   g.setAttribute('transform',`translate(${S.panX},${S.panY}) scale(${S.scale})`);
-  svg.appendChild(g);
-  nodePositions=computeLayout();
+
   // Edges
   for(const id in S.nodes){
     const n=S.nodes[id];
-    if(!n.parentId||!nodePositions[id]||!nodePositions[n.parentId])continue;
-    const p=nodePositions[n.parentId],c=nodePositions[id];
-    const midY=(p.y+50+c.y)/2;
+    if(!n.parentId||!nodePos[id]||!nodePos[n.parentId])continue;
+    const p=nodePos[n.parentId],c=nodePos[id];
+    const midY=(p.y+NH*.8+c.y)/2;
+    const d=`M${p.x} ${p.y+NH/2} C${p.x} ${midY},${c.x} ${midY},${c.x} ${c.y}`;
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d',`M${p.x} ${p.y+25} C${p.x} ${midY},${c.x} ${midY},${c.x} ${c.y}`);
-    path.setAttribute('class',n.id===S.selectedId?'edge-line highlight':'edge-line');
+    path.setAttribute('d',d);
+    path.setAttribute('class','edge-path');
+    path.setAttribute('stroke',id===S.selId?'#58a6ff':'#30363d');
     g.appendChild(path);
   }
-  // Nodes
-  for(const id in S.nodes){
-    const n=S.nodes[id],np=nodePositions[id];
-    if(!np)continue;
-    const w=Math.max(140,Math.min(n.label.length*14+40,260)),h=52,isRoot=id===S.rootId,sel=id===S.selectedId;
+
+  // Nodes (post-order so children render on top)
+  function renderNode(id){
+    const n=S.nodes[id],np=nodePos[id];if(!n||!np)return;
+    const lvl=n.level%PALETTE.length,color=PALETTE[lvl];
+    const isRoot=id===S.rootId,sel=id===S.selId;
+    const w=Math.max(NW-20,Math.min(n.label.length*13+50,NW+60)),h=isRoot?NH+8:NH;
+
     const ng=document.createElementNS('http://www.w3.org/2000/svg','g');
-    ng.setAttribute('class','node-group'+(isRoot?' root':'')+(sel?' selected':''));
+    ng.setAttribute('class','node-group');
     ng.setAttribute('transform',`translate(${np.x-w/2},${np.y})`);
     ng.setAttribute('data-id',id);
+
+    // Shadow
+    if(sel){
+      const sh=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      sh.setAttribute('x',-3);sh.setAttribute('y',-3);sh.setAttribute('width',w+6);sh.setAttribute('height',h+6);
+      sh.setAttribute('rx',10);sh.setAttribute('fill','none');sh.setAttribute('stroke',color);sh.setAttribute('stroke-width',2);
+      sh.setAttribute('opacity',.6);ng.appendChild(sh);
+    }
+
     // Rect
-    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
-    r.setAttribute('class','node-rect');
-    r.setAttribute('width',w);r.setAttribute('height',h);
-    ng.appendChild(r);
+    const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('class','node-rect');
+    rect.setAttribute('width',w);rect.setAttribute('height',h);
+    rect.setAttribute('rx',isRoot?14:8);
+    if(isRoot){
+      rect.setAttribute('fill',color);rect.setAttribute('stroke',color);
+    }else{
+      rect.setAttribute('fill',sel?'rgba(88,166,255,.08)':'rgba(22,27,34,.9)');
+      rect.setAttribute('stroke',sel?'#58a6ff44':'#30363d');
+    }
+    ng.appendChild(rect);
+
+    // Level stripe (left accent)
+    if(!isRoot){
+      const stripe=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      stripe.setAttribute('x',0);stripe.setAttribute('y',0);stripe.setAttribute('width',3);stripe.setAttribute('height',h);
+      stripe.setAttribute('rx',1);stripe.setAttribute('fill',color);ng.appendChild(stripe);
+    }
+
     // Label
     const label=document.createElementNS('http://www.w3.org/2000/svg','text');
     label.setAttribute('class','node-label');
-    label.setAttribute('x',w/2);label.setAttribute('y',22);
+    label.setAttribute('x',w/2);label.setAttribute('y',h/2-4);
     label.setAttribute('text-anchor','middle');
-    label.textContent=n.label;
-    ng.appendChild(label);
-    // Description hint
-    if(n.desc){
+    label.setAttribute('fill',isRoot?'#000':'#c9d1d9');
+    label.setAttribute('font-size',isRoot?'15':'12');
+    label.setAttribute('font-weight',isRoot?'700':'500');
+    label.textContent=n.label;ng.appendChild(label);
+
+    // Desc
+    if(n.desc&&!isRoot){
       const desc=document.createElementNS('http://www.w3.org/2000/svg','text');
       desc.setAttribute('class','node-desc');
-      desc.setAttribute('x',w/2);desc.setAttribute('y',40);
+      desc.setAttribute('x',w/2);desc.setAttribute('y',h/2+14);
       desc.setAttribute('text-anchor','middle');
-      desc.textContent=n.desc.slice(0,24)+(n.desc.length>24?'…':'');
+      desc.setAttribute('fill','#8b949e');desc.setAttribute('font-size','9');
+      const txt=n.desc.slice(0,22);desc.textContent=txt+(n.desc.length>22?'…':'');
       ng.appendChild(desc);
     }
-    // Plus button
-    if(!isRoot){
-      const pb=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      pb.setAttribute('class','plus-btn');
-      pb.setAttribute('cx',w);pb.setAttribute('cy',h/2);pb.setAttribute('r',10);
-      pb.setAttribute('data-action','addChild');pb.setAttribute('data-id',id);
-      ng.appendChild(pb);
-      const pt=document.createElementNS('http://www.w3.org/2000/svg','text');
-      pt.setAttribute('class','plus-btn-text');
-      pt.setAttribute('x',w);pt.setAttribute('y',h/2+6);
-      pt.setAttribute('text-anchor','middle');pt.textContent='+';
-      pt.setAttribute('data-action','addChild');pt.setAttribute('data-id',id);
-      ng.appendChild(pt);
+
+    // Add button
+    const ab=document.createElementNS('http://www.w3.org/2000/svg','g');
+    ab.setAttribute('class','add-btn');
+    ab.setAttribute('data-action','add');ab.setAttribute('data-id',id);
+    const ac=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    ac.setAttribute('cx',w+10);ac.setAttribute('cy',h/2);ac.setAttribute('r',8);
+    ac.setAttribute('fill','#30363d');ab.appendChild(ac);
+    const at=document.createElementNS('http://www.w3.org/2000/svg','text');
+    at.setAttribute('x',w+10);at.setAttribute('y',h/2+5);at.setAttribute('text-anchor','middle');
+    at.setAttribute('fill','#c9d1d9');at.setAttribute('font-size','14');at.textContent='+';
+    ab.appendChild(at);
+    ng.appendChild(ab);
+
+    // Collapse indicator
+    if(n.children.length>0){
+      const cg=document.createElementNS('http://www.w3.org/2000/svg','g');
+      cg.setAttribute('data-action','toggle');cg.setAttribute('data-id',id);
+      const cc=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      cc.setAttribute('cx',w/2);cc.setAttribute('cy',h+10);cc.setAttribute('r',8);
+      cc.setAttribute('fill','#161b22');cc.setAttribute('stroke','#30363d');cc.setAttribute('stroke-width',1.5);
+      cg.appendChild(cc);
+      const ct=document.createElementNS('http://www.w3.org/2000/svg','text');
+      ct.setAttribute('x',w/2);ct.setAttribute('y',h+14);ct.setAttribute('text-anchor','middle');
+      ct.setAttribute('fill','#8b949e');ct.setAttribute('font-size','10');
+      ct.textContent=n.collapsed?'▶':'▼';cg.appendChild(ct);
+      ng.appendChild(cg);
     }
+
     g.appendChild(ng);
+    for(const c of n.children)renderNode(c);
   }
-  document.getElementById('nodeCount').textContent=Object.keys(S.nodes).length+' 节点';
+  if(S.rootId)renderNode(S.rootId);
+  svgEl.appendChild(g);
+  document.getElementById('nodeCountTxt').textContent=Object.keys(S.nodes).length+' 节点';
+  renderMinimap();
+}
+
+// ======================== MINIMAP ========================
+function renderMinimap(){
+  const ms=document.getElementById('minisvg');
+  ms.innerHTML='';
+  if(!Object.keys(nodePos).length)return;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const k in nodePos){const p=nodePos[k];minX=Math.min(minX,p.x-NW/2);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x+NW/2);maxY=Math.max(maxY,p.y+NH)}
+  const pw=160,ph=110,pad=30;
+  const sx=(pw-pad*2)/(maxX-minX||1),sy=(ph-pad*2)/(maxY-minY||1),s=Math.min(sx,sy);
+  const ox=pad-(minX*s),oy=pad-(minY*s);
+  for(const k in nodePos){
+    const p=nodePos[k],n=S.nodes[k];if(!n)continue;
+    const c=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    c.setAttribute('x',p.x*s+ox-NW*s/2);c.setAttribute('y',p.y*s+oy);
+    c.setAttribute('width',NW*s);c.setAttribute('height',NH*s);
+    c.setAttribute('rx',2);c.setAttribute('fill',PALETTE[n.level%PALETTE.length]);
+    c.setAttribute('opacity',.5);ms.appendChild(c);
+  }
 }
 
 // ======================== EVENTS ========================
-svg.addEventListener('click',e=>{
-  const target=e.target.closest('[data-id]');
-  if(!target)return;
-  const id=target.getAttribute('data-id');
-  const action=target.getAttribute('data-action');
-  if(action==='addChild'){selectNode(id);addChildNode();return}
-  if(id)selectNode(id);
+const wrap=document.getElementById('wrap');
+wrap.addEventListener('click',e=>{
+  const t=e.target.closest('[data-id]');
+  if(!t)return;
+  const id=t.getAttribute('data-id'),act=t.getAttribute('data-action');
+  if(act==='add'){selNode(id);addChildNode();return}
+  if(act==='toggle'){S.nodes[id].collapsed=!S.nodes[id].collapsed;render();return}
+  selNode(id);
+});
+wrap.addEventListener('dblclick',e=>{
+  const t=e.target.closest('[data-id]');
+  if(!t)return;editLabel();
+});
+wrap.addEventListener('contextmenu',e=>{
+  e.preventDefault();const t=e.target.closest('[data-id]');
+  if(!t)return;selNode(t.getAttribute('data-id'));
+  const m=document.getElementById('ctx');m.style.display='block';
+  m.style.left=Math.min(e.clientX,window.innerWidth-180)+'px';
+  m.style.top=Math.min(e.clientY,window.innerHeight-200)+'px';
+  setTimeout(()=>document.addEventListener('click',()=>m.style.display='none',{once:true}),60);
 });
 
-svg.addEventListener('dblclick',e=>{
-  const target=e.target.closest('[data-id]');
-  if(!target){addRootChild();return}
-  editLabel();
-});
-
-svg.addEventListener('contextmenu',e=>{
-  e.preventDefault();
-  const target=e.target.closest('[data-id]');
-  if(!target)return;
-  const id=target.getAttribute('data-id');
-  selectNode(id);
-  const menu=document.getElementById('ctxMenu');
-  menu.style.display='block';
-  menu.style.left=e.clientX+'px';
-  menu.style.top=e.clientY+'px';
-  setTimeout(()=>document.addEventListener('click',()=>menu.style.display='none',{once:true}),50);
-});
-
-// Pan
-let panStart={},startPan={};
-svg.addEventListener('mousedown',e=>{
-  if(e.target===svg||e.target.tagName==='g'&&!e.target.closest('[data-id]')){
-    S.panning=true;panStart={x:e.clientX,y:e.clientY};startPan={x:S.panX,y:S.panY};
-    svg.style.cursor='grabbing';
+// Pan (Space+drag or middle button)
+wrap.addEventListener('mousedown',e=>{
+  if(e.target===wrap||e.target===svgEl||e.button===1){
+    S.panning=true;S.sx=e.clientX;S.sy=e.clientY;S.panSX=S.panX;S.panSY=S.panY;
+    wrap.classList.add('panning');return;
   }
 });
 window.addEventListener('mousemove',e=>{
-  if(S.panning){
-    S.panX=startPan.x+(e.clientX-panStart.x);
-    S.panY=startPan.y+(e.clientY-panStart.y);
-    render();
-  }
+  if(!S.panning)return;
+  S.panX=S.panSX+(e.clientX-S.sx);S.panY=S.panSY+(e.clientY-S.sy);render();
 });
-window.addEventListener('mouseup',()=>{S.panning=false;svg.style.cursor='grab'});
+window.addEventListener('mouseup',()=>{S.panning=false;wrap.classList.remove('panning')});
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();wrap.style.cursor='grabbing'}
+});
+window.addEventListener('keyup',e=>{
+  if(e.code==='Space'){wrap.style.cursor=document.querySelector('.panning')?'grabbing':'grab'}
+});
 
 // Wheel zoom
-svg.addEventListener('wheel',e=>{
+wrap.addEventListener('wheel',e=>{
   e.preventDefault();
-  const ds=e.deltaY>0?.9:1.1;
-  S.scale=Math.max(.2,Math.min(3,S.scale*ds));
-  render();
-});
+  const ds=e.deltaY>0?.88:1.13;
+  const ns=Math.max(.15,Math.min(3,S.scale*ds));
+  const r=ns/S.scale;
+  S.panX=e.clientX-(e.clientX-S.panX)*r;
+  S.panY=e.clientY-(e.clientY-S.panY)*r;
+  S.scale=ns;render();
+},{passive:false});
 
 // Keys
 window.addEventListener('keydown',e=>{
-  if(e.key==='Delete'||e.key==='Backspace'){if(document.activeElement===document.body||document.activeElement===svg){e.preventDefault();deleteNode()}}
-  if(e.key==='Tab'){e.preventDefault();addChildNode()}
+  if((e.key==='Delete'||e.key==='Backspace')&&document.activeElement===document.body){
+    if(S.selId&&S.selId!==S.rootId){e.preventDefault();deleteNode()}
+  }
+  if(e.key==='Tab'){e.preventDefault();if(S.selId)addChildNode()}
+  if(e.key==='Enter'&&!e.shiftKey&&document.activeElement===document.body){
+    e.preventDefault();if(S.selId&&S.nodes[S.selId]?.parentId)addSiblingNode();
+  }
   if(e.ctrlKey&&e.key==='s'){e.preventDefault();exportJSON()}
 });
 
+// Drag & Drop import
+wrap.addEventListener('dragover',e=>{e.preventDefault();document.body.classList.add('drag-over')});
+wrap.addEventListener('dragleave',()=>document.body.classList.remove('drag-over'));
+wrap.addEventListener('drop',e=>{
+  e.preventDefault();document.body.classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{try{doImport(ev.target.result)}catch(er){toast('导入失败')}};
+  reader.readAsText(f);
+});
+
 // ======================== NODE OPS ========================
-function selectNode(id){
-  S.selectedId=id;
-  const n=S.nodes[id];
-  document.getElementById('nodeName').value=n?.label||'';
-  document.getElementById('nodeDesc').value=n?.desc||'';
-  document.getElementById('nodeType').value=n?.type||'page';
-  document.getElementById('nodeTags').value=n?.tags||'';
+function selNode(id){S.selId=id;syncUI();render()}
+function syncUI(){
+  const n=S.nodes[S.selId];if(!n)return;
+  document.getElementById('npName').value=n.label;
+  document.getElementById('npDesc').value=n.desc||'';
+  document.getElementById('npType').value=n.type||'page';
+  document.getElementById('npTags').value=n.tags||'';
+}
+function syncNode(){
+  const n=S.nodes[S.selId];if(!n)return;
+  n.label=document.getElementById('npName').value||n.label;
+  n.desc=document.getElementById('npDesc').value;
+  n.type=document.getElementById('npType').value;
+  n.tags=document.getElementById('npTags').value;
   render();
 }
-
 function addChildNode(){
-  if(!S.selectedId){addRootChild();return}
-  const id=createNode('新功能','描述这个功能...',S.selectedId);
-  S.nodes[id].level=S.nodes[S.selectedId].level+1;
-  selectNode(id);
-  render();
-  showToast('✅ 子节点已添加');
+  if(!S.selId){if(!S.rootId)return;selNode(S.rootId)}
+  const id=mkNode('新功能','描述这个功能...',S.selId);
+  selNode(id);render();toast('✅ 子节点已添加');
 }
-
 function addSiblingNode(){
-  const n=S.nodes[S.selectedId];
-  if(!n||!n.parentId||!S.nodes[n.parentId]){showToast('⚠️ 根节点不能添加兄弟节点');return}
-  const id=createNode('新功能','描述这个功能...',n.parentId);
-  S.nodes[id].level=n.level;
-  selectNode(id);
-  render();
-  showToast('✅ 兄弟节点已添加');
+  const n=S.nodes[S.selId];if(!n||!n.parentId||!S.nodes[n.parentId]){toast('⚠️ 根节点无法添加兄弟');return}
+  const id=mkNode('新功能','描述...',n.parentId);
+  selNode(id);render();toast('✅ 兄弟节点已添加');
 }
-
-function addRootChild(){
-  const id=createNode('新页面','',S.rootId);
-  selectNode(id);
-  render();
-  showToast('✅ 新节点已添加');
-}
-
 function deleteNode(){
-  if(!S.selectedId||S.selectedId===S.rootId){showToast('⚠️ 不能删除根节点');return}
-  const n=S.nodes[S.selectedId];
-  if(!n||!n.parentId)return;
-  function removeDescendants(id){
-    const cn=S.nodes[id];
-    if(!cn)return;
-    for(const cid of cn.children)removeDescendants(cid);
-    delete S.nodes[id];
+  if(!S.selId||S.selId===S.rootId){toast('⚠️ 不能删除根节点');return}
+  const n=S.nodes[S.selId];if(!n||!n.parentId)return;
+  function rm(id){const cn=S.nodes[id];if(!cn)return;for(const c of cn.children)rm(c);delete S.nodes[id]}
+  rm(S.selId);
+  const p=S.nodes[n.parentId];p.children=p.children.filter(c=>c!==S.selId);
+  selNode(n.parentId);render();toast('🗑️ 已删除');
+}
+function editLabel(){document.getElementById('npName').focus();document.getElementById('npName').select();toggleProps(true)}
+function duplicateBranch(){
+  if(!S.selId||S.selId===S.rootId)return;
+  const n=S.nodes[S.selId];if(!n||!n.parentId)return;
+  function copy(pid,src){
+    const id=mkNode(src.label+' (副本)',src.desc,pid,src.type);
+    S.nodes[id].tags=src.tags;S.nodes[id].collapsed=src.collapsed;
+    for(const c of src.children)copy(id,S.nodes[c]);
+    return id;
   }
-  removeDescendants(S.selectedId);
-  const p=S.nodes[n.parentId];
-  p.children=p.children.filter(c=>c!==S.selectedId);
-  S.selectedId=n.parentId;
-  selectNode(S.selectedId);
-  render();
-  showToast('🗑️ 节点已删除');
-}
-
-function editLabel(){
-  if(!S.selectedId)return;
-  document.getElementById('nodeName').focus();
-  document.getElementById('nodeName').select();
-}
-
-function updateSelectedNode(){
-  if(!S.selectedId||!S.nodes[S.selectedId])return;
-  const n=S.nodes[S.selectedId];
-  n.label=document.getElementById('nodeName').value||n.label;
-  n.desc=document.getElementById('nodeDesc').value;
-  n.type=document.getElementById('nodeType').value;
-  n.tags=document.getElementById('nodeTags').value;
-  render();
+  const nid=copy(n.parentId,n);selNode(nid);render();toast('📑 分支已复制');
 }
 
 // ======================== VIEW ========================
-function zoomIn(){S.scale=Math.min(3,S.scale*1.2);render()}
-function zoomOut(){S.scale=Math.max(.2,S.scale*.8);render()}
+function zoomIn(){S.scale=Math.min(3,S.scale*1.25);render()}
+function zoomOut(){S.scale=Math.max(.15,S.scale*.8);render()}
 function resetView(){S.panX=0;S.panY=0;S.scale=1;render()}
 
-// ======================== PANEL ========================
-function togglePanel(){
-  const p=document.getElementById('sidePanel');
-  p.classList.toggle('collapsed');
+// ======================== PANELS ========================
+function toggleProps(force){
+  const p=document.getElementById('fpanel');
+  if(force!==undefined){p.classList.toggle('open',force)}else{p.classList.toggle('open')}
 }
-function switchTab(tab){
-  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
-  event.target.classList.add('active');
-  ['tabProp','tabAI','tabPreview'].forEach(id=>document.getElementById(id).style.display='none');
-  document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).style.display='block';
+function toggleAI(){
+  const p=document.getElementById('aipanel');p.classList.toggle('open');
 }
 
 // ======================== AI ========================
-function aiLog(msg,type){
-  const log=document.getElementById('aiLog');
-  log.innerHTML+=`<div class="ai-msg ${type||'ai'}">${msg}</div>`;
-  log.scrollTop=log.scrollHeight;
-  document.getElementById('statusText').textContent=type==='error'?'AI 出错':'AI 处理中...';
+function alog(msg,type='ai'){
+  const l=document.getElementById('aiLog');l.innerHTML+=`<div class="m ${type}">${msg}</div>`;l.scrollTop=l.scrollHeight;
 }
-function setStatus(ok,txt){
-  document.getElementById('statusDot').className='dot'+(ok?' on':'');
-  document.getElementById('statusText').textContent=txt;
+function buildTree(){
+  function b(id){const n=S.nodes[id];return n?{label:n.label,desc:n.desc,type:n.type,tags:n.tags,children:n.children.map(b).filter(Boolean)}:null}
+  return b(S.rootId);
 }
-
-function buildTreeJSON(){
-  function build(id){
-    const n=S.nodes[id];if(!n)return null;
-    return{label:n.label,desc:n.desc||'',type:n.type||'page',tags:n.tags||'',
-      children:n.children.map(build).filter(Boolean)};
-  }
-  return build(S.rootId);
-}
-function buildFlatList(){
-  const list=[];
-  function walk(id){const n=S.nodes[id];if(!n)return;list.push(n);n.children.forEach(walk)}
-  if(S.rootId)walk(S.rootId);
-  return list;
-}
+function flatList(){const l=[];function w(id){const n=S.nodes[id];if(!n)return;l.push(n);n.children.forEach(w)}if(S.rootId)w(S.rootId);return l}
 
 async function aiOptimize(){
-  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelector('.panel-tab:nth-child(2)').classList.add('active');
-  switchTab('ai');
-  aiLog('🔍 正在分析思维导图结构...','ai');
-  const tree=buildTreeJSON();
-  const json=JSON.stringify(tree,null,2);
-  aiLog('📊 当前结构：'+json.slice(0,200)+'...','user');
+  toggleAI();toggleAI(); // ensure open
+  alog('🔍 正在分析导图结构...','ai');
+  const t=buildTree(),json=JSON.stringify(t,null,2);
   const key=document.getElementById('apiKey').value||S.apiKey;
-  if(!key){aiLog('⚠️ 未配置 API Key，使用本地分析...','error');simulateOptimize(tree);return}
+  if(!key){alog('⚠️ 未配置 Key，使用本地分析','err');simOpti(t);return}
   try{
-    const prompt=`你是一个网站架构优化专家。下面是用户用思维导图定义的网站功能结构（JSON）。
-
-请分析这个结构，并给出优化建议：
-1. 是否有遗漏的功能模块？
-2. 是否有冗余/重复的节点？
-3. 推荐的页面层级和路由结构
-4. 技术实现建议
-
-请返回一个优化后的 JSON 结构（保持相同格式，可以添加/删除/重命名节点），并在末尾用 "---OPTIMIZATION_NOTES---" 分隔，之后给出简短的优化说明。
-
-原始结构：
-${json}`;
     const r=await fetch('https://api.deepseek.com/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],temperature:.3,max_tokens:2000})
+      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:`分析这个网站结构导图，指出遗漏/冗余，返回优化后的 JSON 结构。\n${json}`}],temperature:.3,max_tokens:2000})
     });
     if(!r.ok)throw new Error('API '+r.status);
-    const d=await r.json();
-    const resp=d.choices[0].message.content;
-    processAIResponse(resp);
-  }catch(e){aiLog('❌ API调用失败: '+e.message,'error');setStatus(false,'API 错误')}
+    const d=await r.json();alog('✅ AI 分析完成','ai');
+    alog(d.choices[0].message.content.slice(0,300),'user');toast('✅ AI 优化完成');
+  }catch(e){alog('❌ '+e.message,'err');simOpti(t)}
 }
-
-function simulateOptimize(tree){
-  aiLog('💡 本地分析建议：','ai');
-  const list=buildFlatList();
-  if(list.filter(n=>n.type==='api'&&!n.tags).length>0)aiLog('  ⚠️ 发现未标注技术标签的 API 节点，建议补充','ai');
-  if(list.filter(n=>!n.desc||n.desc==='描述这个功能...').length>0)aiLog('  ⚠️ 有 '+list.filter(n=>!n.desc||n.desc==='描述这个功能...').length+' 个节点缺少功能描述','ai');
-  if(list.length<5)aiLog('  💡 建议添加更多功能节点，完善产品架构','ai');
-  aiLog('✅ 优化分析完成。点击「AI 生成网站」生成代码。','ai');
-  setStatus(true,'分析完成');
-}
-
-function processAIResponse(resp){
-  const parts=resp.split('---OPTIMIZATION_NOTES---');
-  const notes=parts[1]||'';
-  aiLog('📝 优化建议：'+notes.trim(),'ai');
-  try{
-    const opt=JSON.parse(parts[0].trim());
-    if(opt.label){
-      // Rebuild tree
-      const oldRoot=S.rootId;
-      function rebuild(parentId,node){
-        const id=createNode(node.label,node.desc||'',parentId,node.type||'page');
-        S.nodes[id].tags=node.tags||'';
-        if(node.children)node.children.forEach(c=>rebuild(id,c));
-        return id;
-      }
-      // Note: this clears old nodes — we need to handle carefully
-      aiLog('✅ 已收到优化结构。请查看或直接生成网站。','ai');
-      setStatus(true,'优化完成');
-    }
-  }catch(e){
-    aiLog('⚠️ 无法解析优化结果，请检查 AI 返回格式','error');
-    setStatus(false,'解析失败');
-  }
+function simOpti(t){
+  const l=flatList();
+  const mt=l.filter(n=>!n.tags&&n.type==='api');if(mt.length)alog(`⚠️ ${mt.length} 个API节点缺少技术标签`,'err');
+  const nd=l.filter(n=>!n.desc||n.desc.includes('描述'));if(nd.length)alog(`⚠️ ${nd.length} 个节点缺少描述`,'err');
+  if(l.length<6)alog('💡 建议添加更多功能节点','ai');
+  alog('✅ 分析完成','ai');toast('分析完成');
 }
 
 async function aiGenerateSite(){
-  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelector('.panel-tab:nth-child(2)').classList.add('active');
-  switchTab('ai');
-  aiLog('🚀 正在根据思维导图生成完整网站...','ai');
-  const tree=buildTreeJSON();
-  const json=JSON.stringify(tree,null,2);
-  const flat=buildFlatList();
-  const pages=flat.filter(n=>n.type==='page').map(n=>n.label);
-  const modules=flat.filter(n=>n.type==='module').map(n=>n.label);
-  const apis=flat.filter(n=>n.type==='api').map(n=>n.label);
-
+  toggleAI();toggleAI();
+  alog('🚀 正在生成完整网站...','ai');
+  const t=buildTree(),json=JSON.stringify(t,null,2),flat=flatList();
+  const pages=flat.filter(n=>n.type==='page'),modules=flat.filter(n=>n.type==='module');
   const key=document.getElementById('apiKey').value||S.apiKey;
-  if(!key){aiLog('⚠️ 未配置 API Key，生成演示模板...','error');generateTemplate(json,tree,flat);return}
-
+  if(!key){alog('⚠️ 未配置 Key，生成模板','err');genTpl(t);return}
   try{
-    const prompt=`你是一个全栈网站开发专家。根据下面用思维导图定义的网站结构（JSON），生成一个完整的、可直接运行的 HTML 单文件网站。
-
-要求：
-1. 完整实现所有定义的功能模块
-2. 使用现代设计（暗色主题、科技风格、渐变、微动效）
-3. 响应式布局，手机和PC都能用
-4. 所有 CSS/JS 内联，零外部依赖
-5. 包含导航、页面路由、交互逻辑
-6. 代码要可以直接保存为 index.html 并打开使用
-
-网站结构：
-${json}
-
-页面列表：${pages.join(', ')}
-功能模块：${modules.join(', ')}
-API接口：${apis.join(', ')}
-
-只返回完整的 HTML 代码，不要任何解释文字。代码用 \`\`\`html 包裹。`;
-
-    aiLog('📤 已发送结构给 AI，等待生成...','user');
     const r=await fetch('https://api.deepseek.com/v1/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:prompt}],temperature:.5,max_tokens:8000})
+      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:`根据网站结构生成完整单文件HTML。暗色科技主题、响应式、零依赖。结构：\n${json}`}],temperature:.4,max_tokens:8000})
     });
     if(!r.ok)throw new Error('API '+r.status);
     const d=await r.json();
     let code=d.choices[0].message.content;
-    const mm=code.match(/```html\n?([\s\S]*?)```/);
-    if(mm)code=mm[1];
-    aiLog('✅ 网站代码已生成！('+code.length+' 字符)','ai');
-    document.getElementById('generatedCode').value=code;
-    S.generatedHTML=code;
-    previewCode();
-    setStatus(true,'生成完成');
-  }catch(e){aiLog('❌ 生成失败: '+e.message,'error');setStatus(false,'生成失败');generateTemplate(json,tree,flat)}
+    const mm=code.match(/```html\n?([\s\S]*?)```/);if(mm)code=mm[1];
+    S.genHTML=code;alog(`✅ 生成完成 (${code.length}字符)`,'ai');
+    showPreview(code);toast('✅ 网站已生成');
+  }catch(e){alog('❌ '+e.message,'err');genTpl(t)}
 }
-
-function generateTemplate(json,tree,flat){
-  const pages=flat.filter(n=>n.type==='page');
-  const modules=flat.filter(n=>n.type==='module');
-  const pagesHTML=pages.map(p=>`
-    <li><a href="#${p.label.replace(/\s/g,'')}" onclick="navigate('${p.label}')">${p.label}</a></li>`).join('\n');
-
-  const sections=pages.map(p=>`
-    <section id="${p.label.replace(/\s/g,'')}" class="page-section">
-      <h2>${p.label}</h2>
-      <p>${p.desc||p.label+' 功能页面'}</p>
-      ${modules.filter(m=>S.nodes[m.id]?.parentId&&S.nodes[S.nodes[m.id].parentId]?.label===p.label).map(m=>`
-        <div class="module-card">
-          <h3>${m.label}</h3>
-          <p>${m.desc||''}</p>
-        </div>`).join('')}
-    </section>`).join('\n');
-
-  const code=`<!DOCTYPE html>
-<html lang="zh-CN">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${tree.label||'Generated Site'} | Contract Tree</title>
-<style>
-:root{--bg:#0a0e14;--surface:#12171e;--border:#1e293b;--text:#c4ccd4;--accent:#00d4aa;font-family:system-ui,sans-serif}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);min-height:100vh}
-nav{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:24px;z-index:100}
-nav .brand{font-size:18px;font-weight:700;color:var(--accent)}
-nav ul{display:flex;gap:16px;list-style:none}
-nav a{color:var(--text);text-decoration:none;font-size:14px;padding:4px 8px;border-radius:4px;transition:all .2s}
-nav a:hover,nav a.active{color:var(--accent);background:rgba(0,212,170,.1)}
-main{padding:40px 24px;max-width:1200px;margin:0 auto}
-.hero{text-align:center;padding:60px 20px}
-.hero h1{font-size:3rem;background:linear-gradient(135deg,var(--accent),#00aaff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{color:#7f8c9b;font-size:1.1rem;margin-top:12px}
-.page-section{margin-top:48px;padding:24px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
-.page-section h2{color:var(--accent);margin-bottom:12px}
-.module-card{margin:12px 0;padding:16px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px}
-.module-card h3{font-size:16px;margin-bottom:6px}
-footer{text-align:center;padding:40px;color:#555;font-size:13px}
-</style></head>
-<body>
-<nav><span class="brand">🌳 ${tree.label||'Contract Site'}</span><ul>${pagesHTML}</ul></nav>
-<main>
-<div class="hero"><h1>${tree.label||'Welcome'}</h1><p>由契约树思维导图自动生成 · ${new Date().toLocaleDateString('zh-CN')}</p></div>
-${sections}
-</main>
-<footer>Generated by 契约树 AI Builder · Powered by DeepSeek</footer>
-<script>function navigate(name){document.querySelectorAll('.page-section').forEach(s=>s.style.display='none');const el=document.getElementById(name.replace(/\\s/g,''));if(el)el.style.display='block';document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));event.target.classList.add('active')}</script>
-</body></html>`;
-
-  document.getElementById('generatedCode').value=code;
-  S.generatedHTML=code;
-  aiLog('✅ 模板代码已生成 ('+code.length+' 字符)。配置 API Key 可获得 AI 定制生成。','ai');
-  previewCode();
-  setStatus(true,'模板生成完成');
+function genTpl(t){
+  const flat=flatList(),pages=flat.filter(n=>n.type==='page'),modules=flat.filter(n=>n.type==='module');
+  const navItems=pages.map(p=>`<li><a href="#${p.label}">${p.label}</a></li>`).join('');
+  const sections=pages.map(p=>`<section id="${p.label.replace(/[^a-zA-Z\u4e00-\u9fa5]/g,'')}"><h2>${p.label}</h2><p>${p.desc||''}</p></section>`).join('');
+  const code=`<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${t.label}</title>
+<style>:root{--bg:#0d1117;--srf:#161b22;--bd:#30363d;--tx:#c9d1d9;--ac:#58a6ff}*{margin:0;padding:0;box-sizing:border-box}body{background:var(--bg);color:var(--tx);font-family:system-ui;min-height:100vh}
+nav{position:sticky;top:0;background:var(--srf);border-bottom:1px solid var(--bd);padding:12px 24px;display:flex;gap:20px;align-items:center;z-index:100}
+nav .brand{font-size:18px;font-weight:700;color:var(--ac)}nav ul{display:flex;gap:12px;list-style:none}nav a{color:var(--tx);text-decoration:none;font-size:14px;padding:4px 8px;border-radius:4px}nav a:hover{color:var(--ac)}
+.hero{text-align:center;padding:80px 20px 40px}.hero h1{font-size:3rem;color:var(--ac)}.hero p{color:#8b949e;margin-top:8px}
+main{max-width:1000px;margin:0 auto;padding:0 20px 60px}
+section{background:var(--srf);border:1px solid var(--bd);border-radius:12px;padding:24px;margin-bottom:20px}section h2{color:var(--ac);margin-bottom:10px}
+footer{text-align:center;padding:30px;color:#555;font-size:13px;border-top:1px solid var(--bd)}</style></head>
+<body><nav><span class="brand">🌳 ${t.label}</span><ul>${navItems}</ul></nav>
+<div class="hero"><h1>${t.label}</h1><p>由契约树思维导图自动生成 · ${new Date().toLocaleDateString('zh-CN')}</p></div>
+<main>${sections}</main><footer>Generated by 契约树 AI Builder</footer></body></html>`;
+  S.genHTML=code;alog(`✅ 模板生成 (${code.length}字符)`,'ai');showPreview(code);toast('模板已生成');
 }
-
-function previewCode(){
-  const code=document.getElementById('generatedCode').value||S.generatedHTML;
-  if(!code){showToast('⚠️ 请先生成代码');return}
-  const frame=document.getElementById('previewFrame');
-  frame.srcdoc=code;
-  switchTab('preview');
-  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelector('.panel-tab:nth-child(3)').classList.add('active');
+function showPreview(code){
+  if(typeof previewWindow!=='undefined'&&!previewWindow?.closed){previewWindow.document.write(code);previewWindow.focus();return}
+  previewWindow=window.open('','_ctpreview');previewWindow.document.write(code);
 }
-
+function previewCode(){if(S.genHTML)showPreview(S.genHTML);else toast('⚠️ 请先生成网站')}
 function downloadCode(){
-  const code=document.getElementById('generatedCode').value||S.generatedHTML;
-  if(!code){showToast('⚠️ 请先生成代码');return}
-  const blob=new Blob([code],{type:'text/html'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=(S.nodes[S.rootId]?.label||'site')+'.html';
-  a.click();
-  showToast('💾 已下载');
+  if(!S.genHTML){toast('⚠️ 请先生成网站');return}
+  const b=new Blob([S.genHTML],{type:'text/html'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=(S.nodes[S.rootId]?.label||'site')+'.html';a.click();toast('💾 已下载');
 }
+let previewWindow;
 
 // ======================== IMPORT/EXPORT ========================
 function exportJSON(){
-  const data={version:'1.0',rootId:S.rootId,nodes:S.nodes,nextId:S.nextId,createdAt:new Date().toISOString()};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=(S.nodes[S.rootId]?.label||'mindmap')+'.contract-tree.json';
-  a.click();
-  showToast('📥 导图已导出');
+  const d={v:'2.0',rootId:S.rootId,nodes:S.nodes,nextId:S.nextId,genHTML:S.genHTML,ts:new Date().toISOString()};
+  const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=(S.nodes[S.rootId]?.label||'mindmap')+'.ct.json';a.click();toast('📥 已导出');
 }
-
-function importJSON(e){
-  const file=e.target.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    try{
-      const data=JSON.parse(ev.target.result);
-      if(!data.nodes||!data.rootId)throw new Error('Invalid format');
-      S.nodes=data.nodes;
-      S.rootId=data.rootId;
-      S.nextId=data.nextId||Object.keys(data.nodes).length+1;
-      S.selectedId=S.rootId;
-      selectNode(S.rootId);
-      render();
-      showToast('📤 导图已导入 ('+Object.keys(S.nodes).length+' 节点)');
-    }catch(e){showToast('❌ 导入失败: '+e.message)}
-  };
-  reader.readAsText(file);
-  e.target.value='';
+function doImport(raw){
+  const d=JSON.parse(raw);if(!d.nodes||!d.rootId)throw new Error('格式错误');
+  S.nodes=d.nodes;S.rootId=d.rootId;S.nextId=d.nextId||Object.keys(d.nodes).length+1;
+  S.genHTML=d.genHTML||'';
+  selNode(S.rootId);render();
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('fileName').textContent='已导入';
+  toast(`📤 已导入 (${Object.keys(S.nodes).length} 节点)`);
 }
+function importJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{doImport(ev.target.result)}catch(er){toast('导入失败')}};r.readAsText(f);e.target.value=''}
 
-// ======================== TOAST ========================
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2000);
+// ======================== UTILS ========================
+function toast(m){
+  const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),1800);
 }
 
 // ======================== INIT ========================
-function init(){
-  S.apiKey=document.getElementById('apiKey').value=localStorage.getItem('ct_apikey')||'';
-  document.getElementById('apiKey').addEventListener('change',function(){
-    S.apiKey=this.value;localStorage.setItem('ct_apikey',this.value);
-  });
-  // Create root
-  S.rootId=createNode('我的网站','网站根节点，定义整体产品方向',null,'page');
-  S.nodes[S.rootId].level=0;
-  selectNode(S.rootId);
-  // Add demo children
-  const home=createNode('首页','网站首页，包含Hero区域、核心功能介绍、CTA按钮',S.rootId,'page');
-  const about=createNode('关于我们','公司/产品介绍页',S.rootId,'page');
-  const contact=createNode('联系我们','联系表单页面，包含留言、地图、联系方式',S.rootId,'page');
-  // Modules under home
-  createNode('导航栏','响应式导航，包含Logo、菜单项、移动端汉堡菜单',home,'component');
-  createNode('Hero区域','大标题+副标题+CTA按钮+背景动画',home,'component');
-  createNode('功能展示区','卡片式功能展示，3列布局',home,'module');
-  createNode('用户评价','轮播式用户评价展示',home,'module');
-  // API
-  const api=createNode('数据接口','后端API定义',home,'api');
-  createNode('用户注册','POST /api/register 邮箱+密码注册',api,'api');
-  createNode('留言提交','POST /api/contact 提交联系表单',api,'api');
-  render();
-  setStatus(true,'就绪 · 点击节点开始编辑');
+function initBlank(){
+  S.rootId=mkNode('我的网站','',null,'page');selNode(S.rootId);render();
 }
+function initDemo(){
+  const r=mkNode('在线教育平台','全功能在线学习管理系统',null,'page');
+  const h=mkNode('首页','平台入口，包含课程推荐/搜索/热门讲师',r,'page');
+  mkNode('Hero区域','大图轮播+搜索框+CTA按钮',h,'component');
+  mkNode('课程推荐','AI推荐/热门/最新 三Tab切换课程卡片',h,'module');
+  mkNode('导航栏','响应式导航+用户头像+通知铃铛',h,'component');
+  const crs=mkNode('课程中心','课程浏览/筛选/详情/购买',r,'page');
+  mkNode('课程列表','分页+筛选（分类/价格/难度）+排序',crs,'module');
+  mkNode('课程详情','视频播放器/章节列表/笔记/评论',crs,'module');
+  mkNode('购物车','批量购买/优惠码/支付',crs,'module');
+  const usr=mkNode('用户中心','个人设置/学习记录/证书',r,'page');
+  mkNode('个人资料','头像/昵称/简介/社交绑定',usr,'component');
+  mkNode('学习进度','课程进度条/学习时长统计/连续打卡',usr,'module');
+  mkNode('我的证书','电子证书展示/分享/下载',usr,'module');
+  const adm=mkNode('管理后台','内容管理/用户管理/数据看板',r,'page');
+  mkNode('课程管理','CRUD/上下架/价格设置',adm,'module');
+  mkNode('用户管理','列表/封禁/角色权限',adm,'module');
+  mkNode('数据看板','注册量/付费率/课程完课率 图表',adm,'module');
+  const api=mkNode('API接口','后端 RESTful API',r,'api');
+  mkNode('用户注册','POST /api/auth/register',api,'api');
+  mkNode('课程列表','GET /api/courses?page=&category=',api,'api');
+  mkNode('下单支付','POST /api/orders {courseId, coupon}',api,'api');
+  S.rootId=r;selNode(r);render();
+  document.getElementById('fileName').textContent='在线教育平台.ct';
+  toast('示例导图已加载');
+}
+function resetAll(){S.nodes={};S.rootId=null;S.selId=null;S.nextId=1;S.genHTML='';initDemo();render();document.getElementById('welcome').style.display='none';document.getElementById('fileName').textContent='未保存的导图'}
 
-init();
+// Start
+document.getElementById('apiKey').value=S.apiKey;
+document.getElementById('apiKey').addEventListener('change',function(){S.apiKey=this.value;localStorage.setItem('ct_key',this.value)});
 </script>
 </body>
 </html>
